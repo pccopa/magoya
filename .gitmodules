@@ -1,0 +1,7 @@
+[submodule "accounts"]
+    path = accounts
+    url = https://github.com/pccopa/magoya-accounts.git
+    	
+[submodule "listener"]
+    path = listener
+    url = https://github.com/pccopa/magoya-listener.git
