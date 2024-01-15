@@ -1,0 +1,75 @@
+version: "3.2"
+services:
+  db:
+    container_name: events-database
+    image: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: "exit 0"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: events
+    volumes:
+        - /var/lib/postgresql/data
+    networks:
+      - account_net
+  mongo:
+    container_name: mongo
+    image: mongo
+    healthcheck:
+      test: "exit 0"
+    restart: always
+    ports:
+      - '27017:27017'
+    networks:
+      - account_net
+  rabbitmq:
+    image: rabbitmq:3.12.10-management-alpine
+    container_name: rabbitmq
+    healthcheck:
+      test: "exit 0"
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - account_net
+  accounts:
+    build:
+      context: ./accounts
+      dockerfile: ./Dockerfile
+      args:
+        - TAG=accounts
+    ports:
+      - "8080:8080"
+    networks:
+      - account_net
+    depends_on: 
+      mongo: 
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  listener:
+    build:
+      context: ./listener
+      dockerfile: ./Dockerfile
+      args:
+        - TAG=listener
+    ports:
+      - "8081:8081"
+    networks:
+      - account_net
+    depends_on: 
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    
+networks:
+  account_net:
+    driver: bridge
+
